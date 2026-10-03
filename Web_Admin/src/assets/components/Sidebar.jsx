@@ -6,6 +6,8 @@ import {
   FileText,
   CreditCard,
   Users,
+  UserCheck,
+  Cake,
   Bell,
   BarChart3,
   Settings,
@@ -156,6 +158,24 @@ const Sidebar = ({ collapsed, mobileOpen, onCloseMobile }) => {
             }>
               <FileText size={18} />
               {!collapsed && <span>Invoice Management</span>}
+            </NavLink>
+          </li>
+
+          <li>
+            <NavLink to="/customers" className={({ isActive }) =>
+              `menu-item ${isActive ? "active" : ""}`
+            }>
+              <UserCheck size={18} />
+              {!collapsed && <span>Data Pelanggan</span>}
+            </NavLink>
+          </li>
+
+          <li>
+            <NavLink to="/birthdays" className={({ isActive }) =>
+              `menu-item ${isActive ? "active" : ""}`
+            }>
+              <Cake size={18} />
+              {!collapsed && <span>Data Ulang Tahun</span>}
             </NavLink>
           </li>
 

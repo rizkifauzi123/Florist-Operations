@@ -53,31 +53,24 @@ class UserController extends Controller
         if ($request->hasFile('avatar')) {
             // Hapus avatar lama jika ada
             if ($user->avatar) {
-                $oldPath = str_replace('/storage/', '', parse_url($user->avatar, PHP_URL_PATH));
+                $pathOnly = parse_url($user->avatar, PHP_URL_PATH);
+                $oldPath = str_replace(['/storage/', '/api/image/'], '', $pathOnly);
                 \Storage::disk('public')->delete($oldPath);
             }
 
             $path = $request->file('avatar')->store('avatars', 'public');
-            $user->avatar = asset('storage/' . $path); // simpan URL lengkap
+            $filename = basename($path);
+            $user->avatar = url("/api/image/avatars/{$filename}");
         }
 
         // Hapus avatar (set null)
         if ($request->has('remove_avatar') && $request->remove_avatar == true) {
             if ($user->avatar) {
-                $oldPath = str_replace('/storage/', '', parse_url($user->avatar, PHP_URL_PATH));
+                $pathOnly = parse_url($user->avatar, PHP_URL_PATH);
+                $oldPath = str_replace(['/storage/', '/api/image/'], '', $pathOnly);
                 \Storage::disk('public')->delete($oldPath);
             }
             $user->avatar = null;
-        }
-
-        // Update avatar (file upload)
-        if ($request->hasFile('avatar')) {
-            if ($user->avatar) {
-                $oldPath = str_replace('/storage/', '', parse_url($user->avatar, PHP_URL_PATH));
-                \Storage::disk('public')->delete($oldPath);
-            }
-            $path = $request->file('avatar')->store('avatars', 'public');
-            $user->avatar = asset('storage/' . $path);
         }
 
         // Update password jika dikirim
@@ -111,8 +104,11 @@ class UserController extends Controller
             ], 401);
         }
 
+        $token = $user->createToken('auth_token')->plainTextToken;
+
         return response()->json([
             'message' => 'Login berhasil',
+            'token' => $token,
             'data'    => [
                 'id'     => $user->id,
                 'name'   => $user->name,

@@ -17,8 +17,9 @@ class UploadController extends Controller
         // Simpan ke storage/app/public/invoice-images/
         $path = $request->file('image')->store('invoice-images', 'public');
 
-        // Generate URL publik
-        $url = url(Storage::url($path));
+        // Generate URL publik menggunakan route khusus api/image
+        $filename = basename($path);
+        $url = url("/api/image/invoice-images/{$filename}");
 
         return response()->json([
             'success' => true,

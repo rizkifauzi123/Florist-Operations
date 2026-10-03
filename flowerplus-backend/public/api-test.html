@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test - FlowerPlus</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { margin-bottom: 20px; color: #333; }
+        .section { margin-bottom: 20px; padding: 15px; background: #f9f9f9; border-radius: 4px; border-left: 4px solid #0B0F6A; }
+        label { display: block; margin: 10px 0 5px; font-weight: bold; color: #555; }
+        input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; }
+        button { padding: 10px 20px; background: #0B0F6A; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; margin-top: 10px; }
+        button:hover { background: #1576A5; }
+        .output { background: #1e1e1e; color: #0f0; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; margin-top: 10px; white-space: pre-wrap; word-break: break-word; }
+        .success { color: #0a0; }
+        .error { color: #f00; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌸 FlowerPlus API Tester</h1>
+
+        <!-- Test Login -->
+        <div class="section">
+            <h3>Test Login</h3>
+            <label>Email:</label>
+            <input id="loginEmail" type="email" value="rizkiahmadfauzi1215@gmail.com" />
+            <label>Password:</label>
+            <input id="loginPassword" type="password" value="uji123" />
+            <button onclick="testLogin()">Test Login</button>
+            <div id="loginOutput" class="output"></div>
+        </div>
+
+        <!-- Test Forgot Password -->
+        <div class="section">
+            <h3>Test Forgot Password</h3>
+            <label>Email:</label>
+            <input id="forgotEmail" type="email" value="rizkiahmadfauzi1215@gmail.com" />
+            <button onclick="testForgot()">Test Forgot Password</button>
+            <div id="forgotOutput" class="output"></div>
+        </div>
+
+        <!-- Check Database Users -->
+        <div class="section">
+            <h3>Debug Info</h3>
+            <button onclick="testAllUsers()">Get All Users</button>
+            <button onclick="testInvoices()">Get Invoices (No Auth)</button>
+            <button onclick="testInvoicesWithToken()">Get Invoices (With Token)</button>
+            <div id="debugOutput" class="output"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+
+        async function testLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const output = document.getElementById('loginOutput');
+            
+            try {
+                output.innerHTML = '<span class="error">Testing...</span>';
+                const response = await fetch(`${API_URL}/api/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
+                
+                const data = await response.json();
+                output.innerHTML = `<span class="${response.ok ? 'success' : 'error'}">Status: ${response.status}\n${JSON.stringify(data, null, 2)}</span>`;
+            } catch (err) {
+                output.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+            }
+        }
+
+        async function testForgot() {
+            const email = document.getElementById('forgotEmail').value;
+            const output = document.getElementById('forgotOutput');
+            
+            try {
+                output.innerHTML = '<span class="error">Testing...</span>';
+                const response = await fetch(`${API_URL}/api/forgot-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ email }),
+                });
+                
+                const data = await response.json();
+                output.innerHTML = `<span class="${response.ok ? 'success' : 'error'}">Status: ${response.status}\n${JSON.stringify(data, null, 2)}</span>`;
+            } catch (err) {
+                output.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+            }
+        }
+
+        async function testAllUsers() {
+            const output = document.getElementById('debugOutput');
+            
+            try {
+                output.innerHTML = '<span class="error">Fetching...</span>';
+                const response = await fetch(`${API_URL}/api/users`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                const data = await response.json();
+                output.innerHTML = `<span class="success">Status: ${response.status}\n${JSON.stringify(data, null, 2)}</span>`;
+            } catch (err) {
+                output.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+            }
+        }
+
+        async function testInvoices() {
+            const output = document.getElementById('debugOutput');
+            
+            try {
+                output.innerHTML = '<span class="error">Fetching invoices (no auth)...</span>';
+                const response = await fetch(`${API_URL}/api/invoices`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                const data = await response.json();
+                output.innerHTML = `<span class="${response.ok ? 'success' : 'error'}">Status: ${response.status}\n${JSON.stringify(data, null, 2)}</span>`;
+            } catch (err) {
+                output.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+            }
+        }
+
+        async function testInvoicesWithToken() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const output = document.getElementById('debugOutput');
+            
+            try {
+                output.innerHTML = '<span class="error">Logging in & fetching invoices...</span>';
+                
+                // Step 1: Login
+                const loginRes = await fetch(`${API_URL}/api/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password }),
+                });
+                
+                const loginData = await loginRes.json();
+                if (!loginRes.ok) {
+                    output.innerHTML = `<span class="error">Login failed: ${JSON.stringify(loginData, null, 2)}</span>`;
+                    return;
+                }
+                
+                const token = loginData.token;
+                
+                // Step 2: Get Invoices with token
+                const invoicesRes = await fetch(`${API_URL}/api/invoices`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const invoicesData = await invoicesRes.json();
+                output.innerHTML = `<span class="${invoicesRes.ok ? 'success' : 'error'}">Invoices Status: ${invoicesRes.status}\n${JSON.stringify(invoicesData, null, 2)}</span>`;
+            } catch (err) {
+                output.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>

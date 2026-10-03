@@ -11,6 +11,8 @@ import PaymentTracker from "./assets/components/Payment/paymentTracker";
 import ReportsAnalytics from "./assets/components/ReportAnalisis/ReportAnalisis";
 import Settings from "./assets/components/Profile/setting";
 import Profile from "./assets/components/Profile/Profile";
+import CustomerData from "./assets/components/Customer/CustomerData";
+import BirthdayData from "./assets/components/Customer/BirthdayData";
 
 import Login from "./assets/components/Autentikasi/Login";
 import ProtectedRoute from "./assets/routes/ProtectedRoute";
@@ -72,6 +74,12 @@ function App() {
               ?type=normal  → tampil tanpa TTD
             */}
             <Route path="/invoice/preview/:id" element={<InvoicePreview />} />
+
+            {/* CUSTOMER DATA */}
+            <Route path="/customers" element={<CustomerData />} />
+
+            {/* BIRTHDAY DATA */}
+            <Route path="/birthdays" element={<BirthdayData />} />
 
             {/* PAYMENT */}
             <Route path="/payment" element={<PaymentTracker />} />

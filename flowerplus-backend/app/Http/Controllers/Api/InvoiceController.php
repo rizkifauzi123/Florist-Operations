@@ -53,6 +53,7 @@ class InvoiceController extends Controller
                 'status'        => $request->status ?? 'unpaid',
                 'type'          => $request->type   ?? 'normal',
                 'paper_size'    => $paperSize,
+                'is_birthday'   => $request->boolean('is_birthday'),
             ]);
 
             foreach ($items as $item) {
@@ -116,6 +117,7 @@ $newInvoiceNumber = $request->has('_keepInvoiceNumber') && $request->_keepInvoic
             'status'        => $request->status,
             'type'          => $request->type ?? 'normal',
             'paper_size'    => $paperSize,
+            'is_birthday'   => $request->has('is_birthday') ? $request->boolean('is_birthday') : $invoice->is_birthday,
         ]);
 
         $invoice->items()->delete();

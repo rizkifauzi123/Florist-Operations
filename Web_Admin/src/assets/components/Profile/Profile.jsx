@@ -35,16 +35,28 @@ const Profile = () => {
     formData.append("avatar", file);
     formData.append("_method", "PUT");
 
+    const token = localStorage.getItem("token");
+    const headers = { "Accept": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
     try {
-      const response = await fetch(`https://api.flowerplusofficial.com/api/users/${user.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/users/${user.id}`, {
         method: "POST",
+        headers,
         body: formData,
       });
 
       if (!response.ok) {
         const text = await response.text();
         console.error("Avatar error:", text);
-        alert("Gagal menyimpan foto");
+        let errorDetail = "";
+        try {
+          const parsed = JSON.parse(text);
+          errorDetail = parsed.message || JSON.stringify(parsed.errors || parsed);
+        } catch (_) {
+          errorDetail = text;
+        }
+        alert("Gagal menyimpan foto: " + errorDetail);
         return;
       }
 
@@ -78,8 +90,13 @@ const Profile = () => {
       formData.append("_method", "PUT");
       formData.append("remove_avatar", "true");
 
-      const response = await fetch(`https://api.flowerplusofficial.com/api/users/${user.id}`, {
+      const token = localStorage.getItem("token");
+      const headers = { "Accept": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/users/${user.id}`, {
         method: "POST",
+        headers,
         body: formData,
       });
 

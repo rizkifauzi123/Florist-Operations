@@ -61,7 +61,7 @@ function ForgotPassword({ onClose }) {
     setMessage("");
 
     try {
-      const res = await fetch(`https://api.flowerplusofficial.com/api/forgot-password`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/forgot-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -201,17 +201,14 @@ export default function Login() {
         },
         body: JSON.stringify({ email, password }),
       });
-
       const result = await response.json();
-
       if (!response.ok) {
         setErrorMsg(result.message || "Login gagal");
         setLoading(false);
         return;
       }
-
-      // ✅ Simpan user ke localStorage
       localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("token", result.token || "");
       localStorage.setItem("user", JSON.stringify(result.data));
 
       setTimeout(() => {

@@ -358,14 +358,12 @@
   align-items: center !important;
 }
 
-/* Angka utama card full lebih besar karena ada ruang lega */
+/* Angka utama card full — margin saja, ukuran diatur oleh .card-full .card-amount */
 .card-full h2 {
-  font-size: 34px !important;
-  letter-spacing: -1px;
   margin-bottom: 4px !important;
 }
 
-/* 4 kartu bawah otomatis mengisi 4 kolom */
+/* Kartu bawah otomatis mengisi 4 kolom */
 
 .card {
   padding: 24px 22px;
@@ -412,21 +410,37 @@
 }
 .card.dark:hover  { box-shadow: 0 14px 40px rgba(11,34,57,0.4); }
 
+/* Dark */
+.card.dark {
+  background: linear-gradient(140deg, #1d4870 0%, #102a49 100%);
+  color: #ffffff;
+  box-shadow: 0 8px 28px rgba(16,42,73,0.32), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.card.dark:hover  { box-shadow: 0 14px 40px rgba(16,42,73,0.42); }
+
 /* Blue */
 .card.blue {
-  background: linear-gradient(140deg, #2a8cb0 0%, #1e7496 100%);
+  background: linear-gradient(140deg, #2f8fb2 0%, #1f6f90 100%);
   color: #ffffff;
-  box-shadow: 0 8px 28px rgba(30,116,150,0.32), inset 0 1px 0 rgba(255,255,255,0.1);
+  box-shadow: 0 8px 28px rgba(31,111,144,0.32), inset 0 1px 0 rgba(255,255,255,0.1);
 }
-.card.blue:hover  { box-shadow: 0 14px 40px rgba(30,116,150,0.42); }
+.card.blue:hover  { box-shadow: 0 14px 40px rgba(31,111,144,0.42); }
 
-/* Yellow (teal) */
-.card.yellow {
-  background: linear-gradient(140deg, #5ab4cd 0%, #44a0bb 100%);
+/* Indigo — Ongkos Kirim (diganti jadi biru slate, sefamili dgn navy/dark) */
+.card.indigo {
+  background: linear-gradient(140deg, #3d6fa8 0%, #24507f 100%);
   color: #ffffff;
-  box-shadow: 0 8px 28px rgba(68,160,187,0.32), inset 0 1px 0 rgba(255,255,255,0.1);
+  box-shadow: 0 8px 28px rgba(36,80,127,0.32), inset 0 1px 0 rgba(255,255,255,0.1);
 }
-.card.yellow:hover { box-shadow: 0 14px 40px rgba(68,160,187,0.42); }
+.card.indigo:hover { box-shadow: 0 14px 40px rgba(36,80,127,0.42); }
+
+/* Yellow (teal terang, aksen paling cerah) */
+.card.yellow {
+  background: linear-gradient(140deg, #5cb3cc 0%, #3f9ab5 100%);
+  color: #ffffff;
+  box-shadow: 0 8px 28px rgba(63,154,181,0.32), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+.card.yellow:hover { box-shadow: 0 14px 40px rgba(63,154,181,0.42); }
 
 /* ── Navy — Total Keseluruhan, senada palet biru gelap dashboard ── */
 .card.navy {
@@ -502,11 +516,13 @@
 
 .card.dark .card-title,
 .card.blue .card-title,
+.card.indigo .card-title,
 .card.yellow .card-title,
 .card.navy .card-title { color: rgba(255,255,255,0.78); }
 
 .card.dark h2,
 .card.blue h2,
+.card.indigo h2,
 .card.yellow h2,
 .card.navy h2 { color: #ffffff; }
 
@@ -514,8 +530,45 @@
   font-size: 22px;
   font-weight: 800;
   margin: 0 0 8px;
-  letter-spacing: -0.5px;
-  line-height: 1.15;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  flex-wrap: nowrap;
+  cursor: default;
+}
+
+/* Rp label — lebih kecil & subtle */
+.card-currency {
+  font-size: 11.5px;
+  font-weight: 700;
+  opacity: 0.5;
+  letter-spacing: 0;
+  flex-shrink: 0;
+}
+
+/* Angka utama — muat penuh di card */
+.card-amount {
+  font-size: inherit;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* Card full (navy) — lebih besar karena ruang luas */
+.card-full h2 {
+  font-size: 30px;
+  letter-spacing: -0.8px;
+}
+.card-full .card-currency {
+  font-size: 16px;
+  opacity: 0.45;
+}
+.card-full .card-amount {
+  font-size: 30px;
+  letter-spacing: -0.8px;
 }
 
 .card.light .card-title { color: #5a7a94; opacity: 1; }
@@ -543,6 +596,7 @@
 
 .card.dark .trend.up,
 .card.blue .trend.up,
+.card.indigo .trend.up,
 .card.yellow .trend.up,
 .card.navy .trend.up { color: #a7f3c2; background: rgba(34,197,94,0.15); }
 
@@ -559,6 +613,7 @@
 
 .dark-icon   { background: rgba(255,255,255,0.12); color: #ffffff; border: 1px solid rgba(255,255,255,0.1); }
 .blue-icon,
+.indigo-icon,
 .yellow-icon { background: rgba(255,255,255,0.14); color: #ffffff; border: 1px solid rgba(255,255,255,0.12); }
 
 /* ========================

@@ -73,7 +73,7 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
   // Invoice yang belum dibayar (belum diceklis) dan TIDAK kadaluarsa
   const overdueIds     = new Set(overdueInvoices.map(inv => inv.id));
   const unpaidInvoices = (invoices || []).filter(
-    inv => !inv.isPaid && !overdueIds.has(inv.id)
+    inv => inv.status !== "paid" && !overdueIds.has(inv.id)
   );
 
   // Gabungkan: overdue duluan, lalu unpaid

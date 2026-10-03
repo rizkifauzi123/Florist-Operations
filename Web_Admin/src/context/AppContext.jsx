@@ -6,6 +6,18 @@ const API_URL = import.meta.env.VITE_API_URL || '';
 
 export const AppProvider = ({ children }) => {
 
+  const getAuthHeaders = (extraHeaders = {}) => {
+    const token = localStorage.getItem("token");
+    const headers = {
+      "Accept": "application/json",
+      ...extraHeaders,
+    };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    return headers;
+  };
+
   const [invoices, setInvoices] = useState([]);
   const [admins, setAdmins] = useState([]);
 
@@ -48,7 +60,9 @@ export const AppProvider = ({ children }) => {
   ============================ */
 const refreshInvoices = async () => {
   try {
-    const res = await fetch(`${API_URL}/api/invoices`);
+    const res = await fetch(`${API_URL}/api/invoices`, {
+      headers: getAuthHeaders(),
+    });
     if (!res.ok) throw new Error("Fetch failed");
 
     const data = await res.json();
@@ -92,8 +106,13 @@ const refreshInvoices = async () => {
      FETCH ADMINS FROM API
   ============================ */
   useEffect(() => {
-    fetch(`${API_URL}/api/users`)
-      .then(res => res.json())
+    fetch(`${API_URL}/api/users`, {
+      headers: getAuthHeaders(),
+    })
+      .then(res => {
+        if (!res.ok) throw new Error("Gagal mengambil data admin");
+        return res.json();
+      })
       .then(data => setAdmins(data))
       .catch(err => console.error("Error fetching users:", err));
   }, []);
@@ -104,8 +123,13 @@ const refreshInvoices = async () => {
   useEffect(() => {
     if (!user.id) return;
 
-    fetch(`${API_URL}/api/users/${user.id}`)
-      .then(res => res.json())
+    fetch(`${API_URL}/api/users/${user.id}`, {
+      headers: getAuthHeaders(),
+    })
+      .then(res => {
+        if (!res.ok) throw new Error("Gagal mengambil data user");
+        return res.json();
+      })
       .then(data => {
         setUser(prev => ({
           ...prev,

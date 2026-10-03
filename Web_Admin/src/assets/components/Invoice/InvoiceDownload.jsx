@@ -144,7 +144,12 @@ const InvoicePageBlock = ({
   };
 
   const allImagesOnPage = pageItems.flatMap((item) => {
-    const imgs = item.preview || item.image;
+    let image = item.image;
+    if (image && typeof image === "string") {
+      image = image.replace("/storage/invoice-images/", "/api/image/invoice-images/");
+      image = image.replace("/storage/avatars/", "/api/image/avatars/");
+    }
+    const imgs = item.preview || image;
     if (!imgs) return [];
     return Array.isArray(imgs) ? imgs : [imgs];
   });
@@ -482,7 +487,7 @@ const InvoiceDownload = () => {
 
   /* ── Fetch invoice ── */
   useEffect(() => {
-    fetch(`https://api.flowerplusofficial.com/api/invoices/${id}`)
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/invoices/${id}`)
       .then((res) => {
         if (!res.ok) throw new Error("not found");
         return res.json();
@@ -492,7 +497,7 @@ const InvoiceDownload = () => {
         setInvoiceData(inv);
         if (!inv.invoiceNumber) {
           const ps = inv.paper_size || "a4";
-          fetch(`https://api.flowerplusofficial.com/api/invoices/preview-number?paper_size=${ps}`)
+          fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/invoices/preview-number?paper_size=${ps}`)
             .then((r) => r.json())
             .then((d) => setGeneratedNumber(d.invoiceNumber))
             .catch(() => {});

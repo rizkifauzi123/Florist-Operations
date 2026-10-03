@@ -10,6 +10,7 @@ import {
   ChevronDown,
   Calendar,
   Check,
+  Truck,
 } from "lucide-react";
 
 import {
@@ -143,6 +144,10 @@ const DashboardCards = () => {
   const yearOptions = Array.from({ length: 6 }, (_, i) => currentYear + i);
   const parseAmount = (amount) => Number(amount || 0);
 
+const formatCurrency = (value) => {
+  return (value || 0).toLocaleString("id-ID");
+};
+
   const getComputedStatus = (inv) => {
     const today   = new Date();
     const dueDate = new Date(inv.date);
@@ -194,6 +199,10 @@ const DashboardCards = () => {
 
   const totalKeseluruhan = filteredByPeriod.reduce(
     (acc, inv) => acc + parseAmount(inv.amount), 0
+  );
+
+  const totalShippingCost = filteredByPeriod.reduce(
+    (acc, inv) => acc + parseAmount(inv.shippingCost || inv.shipping_cost || 0), 0
   );
 
   const totalCustomer = new Set(
@@ -336,7 +345,10 @@ const DashboardCards = () => {
         <div className="card navy card-full">
           <div>
             <p className="card-title">Total Keseluruhan · {periodeLabel}</p>
-            <h2>Rp {totalKeseluruhan.toLocaleString("id-ID")}</h2>
+            <h2>
+              <span className="card-currency">Rp</span>
+              <span className="card-amount">{formatCurrency(totalKeseluruhan)}</span>
+            </h2>
             <p className="card-subtitle">Seluruh nilai transaksi invoice</p>
           </div>
           <div className="card-icon navy-icon">
@@ -344,36 +356,45 @@ const DashboardCards = () => {
           </div>
         </div>
 
-        {/* 2. Total Invoice */}
-        <div className="card light">
-          <div>
-            <p className="card-title">Total Invoice</p>
-            <h2>{totalInvoice}</h2>
-          </div>
-          <div className="card-icon light-icon">
-            <FileText size={20} />
-          </div>
-        </div>
-
-        {/* 3. Belum Dibayar */}
+        {/* 2. Belum Dibayar */}
         <div className="card dark">
           <div>
             <p className="card-title">Belum Dibayar</p>
-            <h2>Rp {totalOutstanding.toLocaleString("id-ID")}</h2>
+            <h2>
+              <span className="card-currency">Rp</span>
+              <span className="card-amount">{formatCurrency(totalOutstanding)}</span>
+            </h2>
           </div>
           <div className="card-icon dark-icon">
             <Wallet size={20} />
           </div>
         </div>
 
-        {/* 4. Sudah Dibayar */}
+        {/* 3. Sudah Dibayar */}
         <div className="card blue">
           <div>
             <p className="card-title">Sudah Dibayar</p>
-            <h2>Rp {totalPaid.toLocaleString("id-ID")}</h2>
+            <h2>
+              <span className="card-currency">Rp</span>
+              <span className="card-amount">{formatCurrency(totalPaid)}</span>
+            </h2>
           </div>
           <div className="card-icon blue-icon">
             <CheckCircle size={20} />
+          </div>
+        </div>
+
+        {/* 4. Ongkos Kirim */}
+        <div className="card indigo">
+          <div>
+            <p className="card-title">Ongkos Kirim</p>
+            <h2>
+              <span className="card-currency">Rp</span>
+              <span className="card-amount">{formatCurrency(totalShippingCost)}</span>
+            </h2>
+          </div>
+          <div className="card-icon indigo-icon">
+            <Truck size={20} />
           </div>
         </div>
 

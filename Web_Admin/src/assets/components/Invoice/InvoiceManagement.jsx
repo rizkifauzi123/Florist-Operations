@@ -3,12 +3,13 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   Plus, Calendar, Filter, MoreVertical, Eye, Pencil, Trash2,
   Check, ChevronDown, Search, Building2, Share2, Mail,
-  Printer, Send,
+  Printer, Send, X, Truck,
 } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import "../../Style/Invoice/InvoiceManagement.css";
 import { useApp } from "../../../context/AppContext";
 import { getBankInfo } from "../constants/bankInfo";
+import DateRangeFilter from "../common/DateRangeFilter";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -36,7 +37,32 @@ const BULAN = [
 
 const TAHUN = ["2026", "2027", "2028", "2029", "2030", "2031"];
 
+const FILTER_KEY = "inv_mgmt_filter";
+
+const loadFilter = () => {
+  try {
+    const saved = sessionStorage.getItem(FILTER_KEY);
+    return saved ? JSON.parse(saved) : null;
+  } catch { return null; }
+};
+
+const saveFilter = (state) => {
+  try { sessionStorage.setItem(FILTER_KEY, JSON.stringify(state)); } catch {}
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const formatDisplayDate = (dateString) => {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return dateString;
+  const day   = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year  = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+const formatDateDisplay = formatDisplayDate;
 
 const formatDateBroadcast = (dateString) => {
   if (!dateString) return "-";
@@ -209,16 +235,20 @@ const InvoiceManagement = () => {
   const { invoices, setInvoices, refreshInvoices } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
+  const saved = loadFilter();
 
   // ── State ──
-  const [currentPage,       setCurrentPage]       = useState(1);
+  const [currentPage,       setCurrentPage]       = useState(saved?.page    ?? 1);
   const [customBank,        setCustomBank]        = useState("");
-  const [selectedBank,      setSelectedBank]      = useState("Semua Bank");
-  const [selectedStatus,    setSelectedStatus]    = useState("Semua Status");
-  const [selectedPaperSize, setSelectedPaperSize] = useState("all");
-  const [selectedMonth,     setSelectedMonth]     = useState("");
-  const [selectedYear,      setSelectedYear]      = useState("");
-  const [searchTerm,        setSearchTerm]        = useState("");
+  const [selectedBank,      setSelectedBank]      = useState(saved?.bank    ??"Semua Bank");
+  const [selectedStatus,    setSelectedStatus]    = useState(saved?.status  ??"Semua Status");
+  const [selectedPaperSize, setSelectedPaperSize] = useState(saved?.paperSize ??"all");
+  const [selectedDate,      setSelectedDate]      = useState(saved?.date     ??"");
+  const [startDate,         setStartDate]         = useState(saved?.startDate ??"");
+  const [endDate,           setEndDate]           = useState(saved?.endDate   ??"");
+  const [selectedMonth,     setSelectedMonth]     = useState(saved?.month    ??"");
+  const [selectedYear,      setSelectedYear]      = useState(saved?.year     ??"");
+  const [searchTerm,        setSearchTerm]        = useState(saved?.search   ??"");
   const [activeDropdown,    setActiveDropdown]    = useState(null);
   const [shareDropdown,     setShareDropdown]     = useState(null);
   const [monthOpen,         setMonthOpen]         = useState(false);
@@ -228,22 +258,25 @@ const InvoiceManagement = () => {
   // Tambah state (sudah ada toastMessage, tambah satu lagi khusus save)
 const [saveToast, setSaveToast] = useState(null);
 
-const [invoiceSort, setInvoiceSort] = useState("default");
+const [invoiceSort, setInvoiceSort] = useState(saved?.sort    ?? "default");
 const [sortPopupOpen, setSortPopupOpen] = useState(false);
 const sortBtnRef = useRef(null);
 
   const itemsPerPage  = 20;
   const paginationRef = useRef(null);
-  const monthRef      = useRef(null);
+  const dateInputRef  = useRef(null);
   const yearRef       = useRef(null);
 
+  const handleFilterChange = (setter) => (value) => {
+  setter(value);
+  setCurrentPage(1);
+};
   // ── Effects ──
   useEffect(() => { refreshInvoices(); }, []);
 
   useEffect(() => {
     const h = (e) => {
-      if (monthRef.current && !monthRef.current.contains(e.target)) setMonthOpen(false);
-      if (yearRef.current  && !yearRef.current.contains(e.target))  setYearOpen(false);
+      if (yearRef.current && !yearRef.current.contains(e.target)) setYearOpen(false);
     };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
@@ -261,8 +294,20 @@ const sortBtnRef = useRef(null);
   }, []);
 
   useEffect(() => {
-    setCurrentPage(1);
-  }, [selectedPaperSize, selectedBank, selectedStatus, selectedMonth, selectedYear, searchTerm, invoiceSort]);
+  saveFilter({
+    bank:      selectedBank,
+    status:    selectedStatus,
+    paperSize: selectedPaperSize,
+    date:      selectedDate,
+    startDate: startDate,
+    endDate:   endDate,
+    month:     selectedMonth,
+    year:      selectedYear,
+    search:    searchTerm,
+    page:      currentPage,
+    sort:      invoiceSort,
+  });
+}, [selectedBank, selectedStatus, selectedPaperSize, selectedDate, startDate, endDate, selectedMonth, selectedYear, searchTerm, currentPage, invoiceSort]);
 
   useEffect(() => {
   if (location.state?.savedInvoice) {
@@ -292,7 +337,19 @@ const sortBtnRef = useRef(null);
       const statusMap = { Lunas: "paid", "Belum Lunas": "unpaid" };
       if (inv.status.toLowerCase() !== (statusMap[selectedStatus] || selectedStatus.toLowerCase())) return false;
     }
-    if (selectedMonth && selectedYear) {
+    // Filter Tanggal Custom Range / Single Date
+    if (startDate && endDate) {
+      const invDate = inv.date || "";
+      if (!invDate || invDate < startDate || invDate > endDate) return false;
+    } else if (startDate) {
+      const invDate = inv.date || "";
+      if (!invDate || invDate < startDate) return false;
+    } else if (endDate) {
+      const invDate = inv.date || "";
+      if (!invDate || invDate > endDate) return false;
+    } else if (selectedDate) {
+      if ((inv.date || "") !== selectedDate) return false;
+    } else if (selectedMonth && selectedYear) {
       if (!(inv.date || "").startsWith(`${selectedYear}-${selectedMonth}`)) return false;
     } else if (selectedMonth) {
       if ((inv.date || "").slice(5, 7) !== selectedMonth) return false;
@@ -301,12 +358,13 @@ const sortBtnRef = useRef(null);
     }
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      if (
-        !inv.customer.toLowerCase().includes(term) &&
-        !inv.invoiceNumber.toLowerCase().includes(term)&&
-        !(inv.kepada  || "").toLowerCase().includes(term) &&
-    !(inv.branch  || "").toLowerCase().includes(term)
-      ) return false;
+      const matchCustomer  = (inv.customer || "").toLowerCase().includes(term);
+      const matchInvoiceNo = (inv.invoiceNumber || "").toLowerCase().includes(term);
+      const matchKepada    = (inv.kepada || "").toLowerCase().includes(term);
+      const matchBranch    = (inv.branch || "").toLowerCase().includes(term);
+      const matchDesc      = Array.isArray(inv.items) && inv.items.some(item => (item.desc || "").toLowerCase().includes(term));
+
+      if (!matchCustomer && !matchInvoiceNo && !matchKepada && !matchBranch && !matchDesc) return false;
     }
     return true;
   });
@@ -341,11 +399,6 @@ const API_URL = import.meta.env.VITE_API_URL || "";
     }, 50);
   };
 
-  const formatDisplayDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
-  };
-
   const handleDelete = async () => {
     try {
       const inv = invoices.find((i) => i.id === invoiceToDelete);
@@ -378,8 +431,10 @@ setTimeout(() => setToastMessage(null), 3000);
     const dueDate      = formatDueDateBroadcast(item.date);
 
     const msg = encodeURIComponent(
-      `Kepada Yth. *${item.customer}*,\n\n` +
-      `Bersama pesan ini kami sampaikan invoice terbaru dari *Flower Plus*.\n\n` +
+      `Dear...Bapak/Ibu ${item.customer},\n\n` +
+      `Terima kasih telah memilih *Flower Plus* untuk menjadi bagian dari momen dan pesan yang disampaikan.\n` +
+      `Kami merasa terhormat dapat menjadi bagian dari pesan tersebut\u2014*mengantarkan perhatian Bapak/Ibu, bahkan hingga ke berbagai pelosok Indonesia.*\n` +
+      `Berikut adalah rincian pembayaran anda \u{1F60A}\u{1F64F}\n\n` +
       `*Detail Invoice:*\n` +
       `No. Invoice   : ${item.invoiceNumber}\n` +
       `Tanggal       : ${tanggal}\n` +
@@ -387,23 +442,22 @@ setTimeout(() => setToastMessage(null), 3000);
       `Jatuh Tempo   : ${dueDate}\n\n` +
       `*Tautan Unduh Invoice:*\n` +
       `${linkDownload}\n\n` +
-      // bagian info pembayaran di body email:
-`Informasi Pembayaran:\n` +
-(bankData.isCash
-  ? `- Metode  : PEMBAYARAN TUNAI\n\n`
-  : bankData.norek2
-    ? `- Bank 1  : ${bankData.label}\n` +
-      `- No. Rek : ${bankData.norek}\n` +
-      `- Bank 2  : ${bankData.label2}\n` +
-      `- No. Rek : ${bankData.norek2}\n\n`
-    : `- Bank    : ${bankData.label}\n` +
-      `- No. Rek : ${bankData.norek}\n\n`) +
-      `Kami mohon pembayaran dapat dilakukan sebelum tanggal jatuh tempo yang tertera.\n` +
-      `Apabila ada pertanyaan, jangan ragu untuk menghubungi kami.\n\n` +
-      `Hormat kami,\n` +
-      `*Flower Plus*\n` 
+      `*Informasi Pembayaran:*\n` +
+      (bankData.isCash
+        ? `- Metode  : PEMBAYARAN TUNAI\n\n`
+        : bankData.norek2
+          ? `- Bank 1  : ${bankData.label}\n` +
+            `- No. Rek : ${bankData.norek}\n` +
+            `- Bank 2  : ${bankData.label2}\n` +
+            `- No. Rek : ${bankData.norek2}\n\n`
+          : `- Bank    : ${bankData.label}\n` +
+            `- No. Rek : ${bankData.norek}\n\n`) +
+      `Terima kasih telah memilih dan mempercayakan *FlowerPlus*.\n` +
+      `*Karena bagi kami, bunga bukan hanya tentang apa yang terlihat, tetapi tentang apa yang ingin disampaikan.*\n\n` +
+      `Salam hangat,\n` +
+      `*Tim Keuangan Flower Plus*\n`
     );
-    window.open(`https://wa.me/?text=${msg}`, "_blank");
+    window.open(`https://api.whatsapp.com/send?text=${msg}`, "_blank");
   };
 
   const handleShareEmail = (item) => {
@@ -415,8 +469,10 @@ setTimeout(() => setToastMessage(null), 3000);
 
     const subject = encodeURIComponent(`Invoice ${item.invoiceNumber} - Flower Plus`);
     const body    = encodeURIComponent(
-      `Kepada Yth. ${item.customer},\n\n` +
-      `Bersama email ini kami sampaikan invoice terbaru dari Flower Plus.\n\n` +
+      `Dear...Bapak/Ibu ${item.customer},\n\n` +
+      `Terima kasih telah memilih Flower Plus untuk menjadi bagian dari momen dan pesan yang ingin Bapak/Ibu sampaikan.\n` +
+      `Kami merasa terhormat dapat menjadi bagian dari pesan tersebut\u2014mengantarkan perhatian Bapak/Ibu, bahkan hingga ke berbagai pelosok Indonesia.\n` +
+      `Berikut adalah rincian pembayaran anda \u{1F60A}\u{1F64F}\n\n` +
       `Detail Invoice:\n` +
       `- No. Invoice   : ${item.invoiceNumber}\n` +
       `- Tanggal       : ${tanggal}\n` +
@@ -424,22 +480,20 @@ setTimeout(() => setToastMessage(null), 3000);
       `- Jatuh Tempo   : ${dueDate}\n\n` +
       `Silakan unduh invoice Anda melalui tautan berikut:\n` +
       `${linkDownload}\n\n` +
-      // lalu di pesan:
-`*Informasi Pembayaran:*\n` +
-(bankData.isCash
-  ? `Metode  : PEMBAYARAN TUNAI\n\n`
-  : bankData.norek2
-    ? `Bank 1  : ${bankData.label}\n` +
-      `No. Rek : ${bankData.norek}\n` +
-      `Bank 2  : ${bankData.label2}\n` +
-      `No. Rek : ${bankData.norek2}\n\n`
-    : `Bank    : ${bankData.label}\n` +
-      `No. Rek : ${bankData.norek}\n\n`) +
-      `Kami mohon pembayaran dapat dilakukan sebelum tanggal jatuh tempo yang tertera.\n` +
-      `Apabila ada pertanyaan, jangan ragu untuk menghubungi kami.\n\n` +
-      `Hormat kami,\n` +
-      `Flower Plus\n` +
-      `www.flowerplus.id | +62 813 1683 5325`
+      `Informasi Pembayaran:\n` +
+      (bankData.isCash
+        ? `Metode  : PEMBAYARAN TUNAI\n\n`
+        : bankData.norek2
+          ? `Bank 1  : ${bankData.label}\n` +
+            `No. Rek : ${bankData.norek}\n` +
+            `Bank 2  : ${bankData.label2}\n` +
+            `No. Rek : ${bankData.norek2}\n\n`
+          : `Bank    : ${bankData.label}\n` +
+            `No. Rek : ${bankData.norek}\n\n`) +
+      `Terima kasih telah memilih dan mempercayakan FlowerPlus.\n` +
+      `Karena bagi kami, bunga bukan hanya tentang apa yang terlihat, tetapi tentang apa yang ingin disampaikan.\n\n` +
+      `Salam hangat,\n` +
+      `Tim Keuangan Flower Plus\n`
     );
     window.open(`mailto:?subject=${subject}&body=${body}`, "_self");
   };
@@ -522,7 +576,7 @@ setTimeout(() => setToastMessage(null), 3000);
       <div className="inv-summary-bar">
         <button
           className={`inv-summary-item ${selectedPaperSize === "all" ? "isb-active-all" : ""}`}
-          onClick={() => setSelectedPaperSize("all")}
+          onClick={() => handleFilterChange(setSelectedPaperSize)("all")}
         >
           <span className="isb-dot isb-dot-all" />
           <span className="isb-label">Semua</span>
@@ -533,7 +587,7 @@ setTimeout(() => setToastMessage(null), 3000);
 
         <button
           className={`inv-summary-item isb-a5 ${selectedPaperSize === "a5" ? "isb-active-a5" : ""}`}
-          onClick={() => setSelectedPaperSize(selectedPaperSize === "a5" ? "all" : "a5")}
+          onClick={() => handleFilterChange(setSelectedPaperSize)("a5")}
         >
           <Printer size={13} />
           <span className="isb-label">A5 · Cetak</span>
@@ -544,7 +598,7 @@ setTimeout(() => setToastMessage(null), 3000);
 
         <button
           className={`inv-summary-item isb-a4 ${selectedPaperSize === "a4" ? "isb-active-a4" : ""}`}
-          onClick={() => setSelectedPaperSize(selectedPaperSize === "a4" ? "all" : "a4")}
+          onClick={() => handleFilterChange(setSelectedPaperSize)("a4")}
         >
           <Send size={13} />
           <span className="isb-label">A4 · PDF</span>
@@ -564,40 +618,31 @@ setTimeout(() => setToastMessage(null), 3000);
 
           <div className="filter-divider-v" style={{ height: "20px" }} />
 
-          {/* BULAN */}
-          <div className="custom-dropdown" ref={monthRef}>
-            <button
-              type="button"
-              className={`custom-dropdown-trigger ${monthOpen ? "open" : ""} ${selectedMonth ? "active-filter" : ""}`}
-              onClick={() => { setMonthOpen((p) => !p); setYearOpen(false); }}
-            >
-              <Calendar size={13} className="trigger-icon" />
-              <span>{selectedMonth ? BULAN.find((b) => b.value === selectedMonth)?.label : "Semua Bulan"}</span>
-              <ChevronDown size={13} className={`dropdown-chevron ${monthOpen ? "rotated" : ""}`} />
-            </button>
-            {monthOpen && (
-              <div className="custom-dropdown-menu">
-                <button
-                  type="button"
-                  className={`custom-dropdown-option ${!selectedMonth ? "selected" : ""}`}
-                  onClick={() => { setSelectedMonth(""); setMonthOpen(false); }}
-                >
-                  <span>Semua Bulan</span>
-                  {!selectedMonth && <Check size={13} className="option-check" />}
-                </button>
-                {BULAN.map((b) => (
-                  <button
-                    key={b.value} type="button"
-                    className={`custom-dropdown-option ${selectedMonth === b.value ? "selected" : ""}`}
-                    onClick={() => { setSelectedMonth(b.value); setMonthOpen(false); }}
-                  >
-                    <span>{b.label}</span>
-                    {selectedMonth === b.value && <Check size={13} className="option-check" />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* TANGGAL FILTER (SINGLE & CUSTOM RANGE) */}
+          <DateRangeFilter
+            singleDate={selectedDate}
+            startDate={startDate}
+            endDate={endDate}
+            onApply={({ mode, singleDate: sDate, startDate: sStart, endDate: sEnd }) => {
+              if (mode === "single") {
+                setSelectedDate(sDate);
+                setStartDate("");
+                setEndDate("");
+              } else {
+                setSelectedDate("");
+                setStartDate(sStart);
+                setEndDate(sEnd);
+              }
+              setCurrentPage(1);
+            }}
+            onReset={() => {
+              setSelectedDate("");
+              setStartDate("");
+              setEndDate("");
+              setCurrentPage(1);
+            }}
+            theme="blue"
+          />
 
           {/* TAHUN */}
           <div className="custom-dropdown" ref={yearRef}>
@@ -623,7 +668,7 @@ setTimeout(() => setToastMessage(null), 3000);
                   <button
                     key={y} type="button"
                     className={`custom-dropdown-option ${selectedYear === y ? "selected" : ""}`}
-                    onClick={() => { setSelectedYear(y); setYearOpen(false); }}
+                    onClick={() => { handleFilterChange(setSelectedYear)(y); setYearOpen(false); }}
                   >
                     <span>{y}</span>
                     {selectedYear === y && <Check size={13} className="option-check" />}
@@ -638,20 +683,20 @@ setTimeout(() => setToastMessage(null), 3000);
             <Search size={14} className="search-icon" />
             <input
               type="text"
-              placeholder="Cari pelanggan / no. invoice  / cabang..."
+              placeholder="Cari pelanggan / no. invoice / cabang / deskripsi..."
               className="search-input"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleFilterChange(setSearchTerm)(e.target.value)}
             />
           </div>
 
           <BankDropdown
             value={selectedBank}
             customBank={customBank}
-            onBankChange={setSelectedBank}
+            onBankChange={handleFilterChange(setSelectedBank)}
             onCustomBankChange={setCustomBank}
           />
-          <CustomDropdown options={statuses} value={selectedStatus} onChange={setSelectedStatus} />
+          <CustomDropdown options={statuses} value={selectedStatus} onChange={handleFilterChange(setSelectedStatus)} />
 
         </div>
       </div>
@@ -664,48 +709,48 @@ setTimeout(() => setToastMessage(null), 3000);
               <tr>
                 <th style={{ width: "48px", textAlign: "center" }}>No</th>
                 <th>
-  <div className="inv-sort-th" ref={sortBtnRef}>
-    Invoice
-   <button
-  type="button"
-  className={`inv-sort-btn ${invoiceSort !== "default" ? "inv-sort-btn--active" : ""}`}
-  onClick={() => setSortPopupOpen((p) => !p)}
->
-  <span className="inv-sort-icon">
-    <span className={`inv-sort-bar ${invoiceSort === "asc" ? "inv-sort-bar--on" : ""}`} />
-    <span className={`inv-sort-bar ${invoiceSort === "desc" ? "inv-sort-bar--on" : ""}`} />
-  </span>
-  <span className="inv-sort-label">
-    {invoiceSort === "asc" ? "A→Z" : invoiceSort === "desc" ? "Z→A" : "Urut"}
-  </span>
-</button>
+                  <div className="inv-sort-th" ref={sortBtnRef}>
+                    Invoice
+                  <button
+                  type="button"
+                  className={`inv-sort-btn ${invoiceSort !== "default" ? "inv-sort-btn--active" : ""}`}
+                  onClick={() => setSortPopupOpen((p) => !p)}
+                >
+                  <span className="inv-sort-icon">
+                    <span className={`inv-sort-bar ${invoiceSort === "asc" ? "inv-sort-bar--on" : ""}`} />
+                    <span className={`inv-sort-bar ${invoiceSort === "desc" ? "inv-sort-bar--on" : ""}`} />
+                  </span>
+                  <span className="inv-sort-label">
+                    {invoiceSort === "asc" ? "A→Z" : invoiceSort === "desc" ? "Z→A" : "Urut"}
+                  </span>
+                </button>
 
-    {sortPopupOpen && (
-      <div className="inv-sort-popup">
-        {[
-          { key: "desc",    label: "Terbesar ke terkecil", icon: "↓" },
-          { key: "asc",     label: "Terkecil ke terbesar", icon: "↑" },
-          { key: "default", label: "Default (terbaru)",    icon: "≡" },
-        ].map(({ key, label, icon }) => (
-          <button
-            key={key}
-            type="button"
-            className={`inv-sort-opt ${invoiceSort === key ? "inv-sort-opt--sel" : ""}`}
-            onClick={() => { setInvoiceSort(key); setSortPopupOpen(false); }}
-          >
-            <span className="inv-sort-opt-icon">{icon}</span>
-            {label}
-          </button>
-        ))}
-      </div>
-    )}
-  </div>
-</th>
+                    {sortPopupOpen && (
+                      <div className="inv-sort-popup">
+                        {[
+                          { key: "desc",    label: "Terbesar ke terkecil", icon: "↓" },
+                          { key: "asc",     label: "Terkecil ke terbesar", icon: "↑" },
+                          { key: "default", label: "Default (terbaru)",    icon: "≡" },
+                        ].map(({ key, label, icon }) => (
+                          <button
+                            key={key}
+                            type="button"
+                            className={`inv-sort-opt ${invoiceSort === key ? "inv-sort-opt--sel" : ""}`}
+                            onClick={() => { setInvoiceSort(key); setSortPopupOpen(false); }}
+                          >
+                            <span className="inv-sort-opt-icon">{icon}</span>
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </th>
                 <th>Tipe</th>
                 <th>Pelanggan</th>
                 <th className="col-bank">Bank</th>
                 <th>Jumlah</th>
-                <th>Jatuh Tempo</th>
+                <th>Tanggal</th>
                 <th>Status</th>
                 <th style={{ textAlign: "right" }}>Aksi</th>
               </tr>
@@ -729,12 +774,32 @@ setTimeout(() => setToastMessage(null), 3000);
                     <td className="invoice-id">{item.invoiceNumber}</td>
                     <td><PaperBadge size={item.paper_size} /></td>
                     <td>
-  <strong title={item.customer}>{item.customer}</strong>
-  <span>{item.email}</span>
-</td>
+                      <strong title={item.customer}>{item.customer}</strong>
+                      <span>{item.email}</span>
+                    </td>
                     <td className="bank-cell col-bank">{item.bank}</td>
-                    <td className="amount-cell">Rp {Number(item.amount).toLocaleString("id-ID")}</td>
-                    <td className="date-cell">{item.date}</td>
+                    <td className="amount-cell">
+                      <div className="inv-amount-wrap">
+                        <span className="inv-amount-main">Rp {Number(item.amount).toLocaleString("id-ID")}</span>
+                        {Number(item.shippingCost || item.shipping_cost || 0) > 0 && (
+                          <span
+                            className="inv-ongkir-badge"
+                            title={`Ongkos Kirim: Rp ${Number(item.shippingCost || item.shipping_cost).toLocaleString("id-ID")}`}
+                          >
+                            <Truck size={11} />
+                            <span>Ongkir Rp {Number(item.shippingCost || item.shipping_cost).toLocaleString("id-ID")}</span>
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="date-cell">
+                      <span>{formatDisplayDate(item.date)}</span>
+                      <span style={{ fontSize: "11px", color: "#94a3b8", display: "block", marginTop: "2px" }}>
+                        Jatuh tempo: {formatDisplayDate(
+                          new Date(new Date(item.date).getTime() + 7 * 24 * 60 * 60 * 1000)
+                        )}
+                      </span>
+                    </td>
                     <td>
                       <span className={`badge ${item.status}`}>
                         {getBadgeLabel(item.status)}
@@ -774,6 +839,15 @@ setTimeout(() => setToastMessage(null), 3000);
                   <span className="inv-card-amount">
                     Rp {Number(item.amount).toLocaleString("id-ID")}
                   </span>
+                  {Number(item.shippingCost || item.shipping_cost || 0) > 0 && (
+                    <span
+                      className="inv-ongkir-badge"
+                      title={`Ongkos Kirim: Rp ${Number(item.shippingCost || item.shipping_cost).toLocaleString("id-ID")}`}
+                    >
+                      <Truck size={11} />
+                      <span>Ongkir Rp {Number(item.shippingCost || item.shipping_cost).toLocaleString("id-ID")}</span>
+                    </span>
+                  )}
                   <span className={`badge ${item.status}`}>
                     {getBadgeLabel(item.status)}
                   </span>
@@ -783,7 +857,7 @@ setTimeout(() => setToastMessage(null), 3000);
                 <div className="inv-card-meta">
                   <PaperBadge size={item.paper_size} />
                   {item.bank && <span className="inv-card-bank">{item.bank}</span>}
-                  <span className="inv-card-date">{item.date}</span>
+                  <span className="inv-card-date">{formatDisplayDate(item.date)}</span>
                 </div>
                 <div className="inv-card-actions">
                   <button

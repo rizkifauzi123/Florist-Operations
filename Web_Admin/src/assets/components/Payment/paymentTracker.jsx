@@ -57,7 +57,7 @@ const PaymentTracker = () => {
   const handleMarkPaid = async (inv) => {
     setLoadingId(inv.id);
     try {
-      const response = await fetch(`https://api.flowerplusofficial.com/api/invoices/${inv.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/invoices/${inv.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", "Accept": "application/json" },
         body: JSON.stringify({ ...inv, status: "paid" }),
@@ -78,7 +78,7 @@ const PaymentTracker = () => {
   const handleCancelMark = async (inv) => {
     setLoadingId(inv.id);
     try {
-      const response = await fetch(`https://api.flowerplusofficial.com/api/invoices/${inv.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/invoices/${inv.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", "Accept": "application/json" },
         body: JSON.stringify({ ...inv, status: "unpaid" }),

@@ -1,0 +1,264 @@
+/* =============================================================
+   DATE RANGE FILTER POPOVER / DROPDOWN
+   ============================================================= */
+
+.drf-container {
+  position: relative;
+  display: inline-block;
+}
+
+.drf-trigger {
+  height: 36px;
+  background: #f8fafc;
+  border: 1.5px solid #e8eef4;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.drf-trigger:hover,
+.drf-trigger.open {
+  background: #ffffff;
+  border-color: #93c5fd;
+  color: #1e3a8a;
+}
+
+.drf-trigger.active-filter {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.drf-trigger.birthday-theme.active-filter {
+  background: #fdf2f8;
+  border-color: #f472b6;
+  color: #db2777;
+}
+
+.drf-trigger-icon {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.drf-trigger.active-filter .drf-trigger-icon {
+  color: #2563eb;
+}
+
+.drf-trigger.birthday-theme.active-filter .drf-trigger-icon {
+  color: #db2777;
+}
+
+.drf-trigger-text {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drf-clear-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: 4px;
+  margin-left: 2px;
+  transition: all 0.15s ease;
+}
+
+.drf-clear-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #ef4444;
+}
+
+.drf-chevron {
+  color: #94a3b8;
+  transition: transform 0.2s ease;
+}
+
+.drf-chevron.rotated {
+  transform: rotate(180deg);
+}
+
+/* ─── POPOVER MENU ─── */
+.drf-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 320px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12), 0 4px 10px rgba(15, 23, 42, 0.04);
+  z-index: 100;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: drfFadeIn 0.15s ease-out;
+}
+
+@keyframes drfFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── TABS ─── */
+.drf-tabs {
+  display: flex;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.drf-tab-btn {
+  flex: 1;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.drf-tab-btn.active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.drf-tab-btn.birthday-active {
+  background: #ffffff;
+  color: #db2777;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ─── BODY ─── */
+.drf-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.drf-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.drf-input-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.drf-date-input {
+  width: 100%;
+  height: 36px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: #1e293b;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.drf-date-input:focus {
+  background: #ffffff;
+  border-color: #3b82f6;
+}
+
+.drf-date-input.birthday-focus:focus {
+  border-color: #ec4899;
+}
+
+.drf-range-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* ─── FOOTER ACTIONS ─── */
+.drf-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.drf-btn-reset {
+  padding: 6px 12px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.drf-btn-reset:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.drf-btn-apply {
+  padding: 6px 14px;
+  border: none;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.drf-btn-apply:hover {
+  background: #1d4ed8;
+}
+
+.drf-btn-apply.birthday-apply {
+  background: #db2777;
+}
+
+.drf-btn-apply.birthday-apply:hover {
+  background: #be185d;
+}

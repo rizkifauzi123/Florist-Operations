@@ -18,7 +18,7 @@ return new class extends Migration
                 ->constrained()
                 ->cascadeOnDelete();
 
-            $table->string('name');
+            $table->string('desc');
             $table->integer('qty');
             $table->decimal('price', 12, 2);
 

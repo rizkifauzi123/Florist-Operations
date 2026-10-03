@@ -7,9 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:cy": "cypress run",
+    "test:cy:open": "cypress open"
   },
   "dependencies": {
+    "cypress": "^15.14.2",
     "docx": "^9.6.0",
     "file-saver": "^2.0.5",
     "html2canvas": "^1.4.1",
@@ -29,6 +32,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "babel-plugin-react-compiler": "^1.0.0",
+    "cypress-mochawesome-reporter": "^4.0.2",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",

@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Auth\Events\PasswordReset;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class ForgotPasswordController extends Controller
 {
@@ -17,19 +19,45 @@ class ForgotPasswordController extends Controller
             'email' => ['required', 'email'],
         ]);
 
-        $status = Password::sendResetLink(
-            $request->only('email')
-        );
-
-        if ($status === Password::RESET_LINK_SENT) {
+        // Check if user exists
+        $user = User::where('email', $request->email)->first();
+        
+        if (!$user) {
             return response()->json([
-                'message' => 'Link reset password telah dikirim ke email Anda. Silakan cek inbox atau folder spam.',
-            ], 200);
+                'message' => 'Email tidak terdaftar dalam sistem.',
+            ], 422);
         }
 
-        return response()->json([
-            'message' => 'Email tidak terdaftar dalam sistem.',
-        ], 422);
+        try {
+            // Generate reset token
+            $token = Str::random(64);
+            
+            // Store in password_reset_tokens table
+            DB::table('password_reset_tokens')->updateOrInsert(
+                ['email' => $user->email],
+                [
+                    'token' => Hash::make($token),
+                    'created_at' => now(),
+                ]
+            );
+
+            // Generate reset URL
+            $resetUrl = config('app.frontend_url') . '/reset-password?token=' . $token . '&email=' . urlencode($user->email);
+            
+            // Log the reset URL for testing
+            \Log::info("Password Reset Link for {$user->email}: {$resetUrl}");
+
+            return response()->json([
+                'message' => 'Link reset password telah dikirim ke email Anda. Silakan cek inbox atau folder spam.',
+                'reset_link' => $resetUrl, // For testing/development only
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('Forgot password error: ' . $e->getMessage());
+            
+            return response()->json([
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function resetPassword(Request $request)

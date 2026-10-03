@@ -10,7 +10,7 @@ const API_URL = import.meta.env.VITE_API_URL || "";
 
 const bankOptions = [
   "Mandiri", "BRI", "BCA", "BNI", "BSI", "BTN",
-  "Bank Maluku Malut","DJPB", "Tunai",
+  "Bank Maluku Malut","DJPB", "Tunai"
 ];
 
 const BankDropdown = ({ value, onChange }) => {
@@ -70,6 +70,7 @@ const CreateInvoiceForm = () => {
   const [searchParams]  = useSearchParams();
 
   const [form, setForm]             = useState({ date: "", kepada: "", branch: "", bank: "" });
+  const [isBirthday, setIsBirthday] = useState(false);
   const [customBank, setCustomBank] = useState("");
   const [items, setItems]           = useState([{ desc: "", qty: "", price: "", preview: null }]);
   const [shippingCost, setShippingCost] = useState("");
@@ -85,6 +86,7 @@ const CreateInvoiceForm = () => {
         branch: existingInvoice.branch ?? "",
         bank:   existingInvoice.bank   ?? "",
       });
+      setIsBirthday(Boolean(existingInvoice.is_birthday));
       setItems(existingInvoice.items.map(item => ({
         ...item,
         desc:    item.desc  ?? "",
@@ -98,10 +100,15 @@ const CreateInvoiceForm = () => {
       const shippingNum = rawShipping ? Math.round(Number(rawShipping)) : 0;
       setShippingCost(shippingNum > 0 ? String(shippingNum) : "");
     }
-  }, [id]);
+  }, [id, existingInvoice]);
 
   const handleImageUpload = async (index, file) => {
     if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Ukuran file terlalu besar. Batas maksimal server lokal (php.ini) adalah 2MB. Silakan kompres gambar Anda terlebih dahulu.");
+      return;
+    }
 
     const base64Preview = await new Promise((resolve) => {
       const reader = new FileReader();
@@ -120,9 +127,24 @@ const CreateInvoiceForm = () => {
       const formData = new FormData();
       formData.append("image", file);
 
-      const res  = await fetch(`${API_URL}/api/upload-image`, { method: "POST", body: formData });
+      const res  = await fetch(`${API_URL}/api/upload-image`, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+        },
+        body: formData,
+      });
       const text = await res.text();
-      if (!res.ok) throw new Error(`Upload gagal: ${res.status}`);
+      if (!res.ok) {
+        let errorDetail = "";
+        try {
+          const parsed = JSON.parse(text);
+          errorDetail = parsed.message || JSON.stringify(parsed.errors || parsed);
+        } catch (_) {
+          errorDetail = text;
+        }
+        throw new Error(`Upload gagal: ${errorDetail}`);
+      }
       const data = JSON.parse(text);
 
       setItems(prev => {
@@ -187,8 +209,15 @@ useEffect(() => {
   const key = `${derivedPaperSize}_${form.date}`;
   if (fetchedKey === key) return; // sudah fetch kombinasi ini
 
-  fetch(`${API_URL}/api/invoices/preview-number?paper_size=${derivedPaperSize}&date=${form.date}`)
-    .then((res) => res.json())
+  const token = localStorage.getItem("token");
+  const headers = { "Accept": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  fetch(`${API_URL}/api/invoices/preview-number?paper_size=${derivedPaperSize}&date=${form.date}`, { headers })
+    .then((res) => {
+      if (!res.ok) throw new Error("Gagal");
+      return res.json();
+    })
     .then((d) => {
       setPreviewNumber(d.invoiceNumber || "");
       setFetchedKey(key);
@@ -237,6 +266,7 @@ useEffect(() => {
       type:         existingInvoice?.type   || "normal",
       shippingCost: shippingNum,
       paper_size:   derivedPaperSize,
+      is_birthday:  isBirthday,
       items,
     };
 
@@ -319,11 +349,6 @@ useEffect(() => {
                 handleChange("bank", val);
                 if (val !== "Other") setCustomBank("");
               }} />
-              {/* {form.bank === "Other" && (
-                <input type="text" placeholder="Masukkan nama bank / norek" className="ci-input"
-                  style={{ marginTop: "8px" }}
-                  value={customBank} onChange={(e) => setCustomBank(e.target.value)} />
-              )} */}
             </div>
           </div>
 
@@ -415,6 +440,32 @@ useEffect(() => {
                 onChange={(e) => setShippingCost(parseRupiah(e.target.value))}
               />
             </div>
+          </div>
+
+          {/* CHECKBOX DATA ULANG TAHUN (DI BAWAH ONGKOS KIRIM) */}
+          <div className="ci-birthday-check-container">
+            <label className="ci-birthday-label" htmlFor="ci-birthday-toggle">
+              <div className="ci-checkbox-wrapper">
+                <input
+                  id="ci-birthday-toggle"
+                  type="checkbox"
+                  className="ci-checkbox-input"
+                  checked={isBirthday}
+                  onChange={(e) => setIsBirthday(e.target.checked)}
+                />
+                <div className={`ci-checkbox-box ${isBirthday ? "checked" : ""}`}>
+                  {isBirthday && <Check size={12} strokeWidth={3} />}
+                </div>
+              </div>
+              <div className="ci-birthday-info">
+                <span className="ci-birthday-title">
+                  🎉 Masukkan ke Data Ulang Tahun
+                </span>
+                <span className="ci-birthday-desc">
+                  Jika dicentang, data ini akan muncul di menu <strong>Data Ulang Tahun</strong> dan tetap tersimpan di <strong>Data Pelanggan</strong>.
+                </span>
+              </div>
+            </label>
           </div>
 
           {/* TOTAL BOX */}

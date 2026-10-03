@@ -62,18 +62,17 @@ Route::get('/image/{folder}/{filename}', function ($folder, $filename) {
 /* ============================
    Invoice
 ============================ */
-Route::get('/invoices/preview-number',  [InvoiceController::class, 'previewNumber']);
-Route::get('/invoices',                 [InvoiceController::class, 'index']);
-Route::post('/invoices',                [InvoiceController::class, 'store']);
-Route::get('/invoices/{id}',            [InvoiceController::class, 'show']);
-Route::put('/invoices/{id}',            [InvoiceController::class, 'update']);
-Route::delete('/invoices/{id}',         [InvoiceController::class, 'destroy']);
-Route::get('/dashboard-summary',        [InvoiceController::class, 'summary']);
-
-/* ============================
-   User
-============================ */
-Route::get('/users',        [UserController::class, 'index']);
-Route::get('/users/{id}',   [UserController::class, 'show']);
-Route::put('/users/{id}',   [UserController::class, 'update']);
-Route::post('/users/{id}',  [UserController::class, 'update']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/invoices/preview-number',  [InvoiceController::class, 'previewNumber']);
+    Route::get('/invoices',                 [InvoiceController::class, 'index']);
+    Route::post('/invoices',                [InvoiceController::class, 'store']);
+    Route::get('/invoices/{id}',            [InvoiceController::class, 'show']);
+    Route::put('/invoices/{id}',            [InvoiceController::class, 'update']);
+    Route::delete('/invoices/{id}',         [InvoiceController::class, 'destroy']);
+    Route::get('/dashboard-summary',        [InvoiceController::class, 'summary']);
+    
+    Route::get('/users',        [UserController::class, 'index']);
+    Route::get('/users/{id}',   [UserController::class, 'show']);
+    Route::put('/users/{id}',   [UserController::class, 'update']);
+    Route::post('/users/{id}',  [UserController::class, 'update']);
+});

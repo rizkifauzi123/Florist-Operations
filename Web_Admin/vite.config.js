@@ -26,22 +26,12 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://api.flowerplusofficial.com',
+        target: 'http://localhost:8000',
         changeOrigin: true,
-        secure: true,
-        headers: {
-          'Origin': 'https://admin.flowerplusofficial.com',
-          'Referer': 'https://admin.flowerplusofficial.com/',
-        }
       },
       '/storage': {
-        target: 'https://api.flowerplusofficial.com',
+        target: 'http://localhost:8000',
         changeOrigin: true,
-        secure: true,
-        headers: {
-          'Origin': 'https://admin.flowerplusofficial.com',
-          'Referer': 'https://admin.flowerplusofficial.com/',
-        }
       }
     }
   }

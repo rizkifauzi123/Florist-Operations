@@ -22,6 +22,11 @@ class Invoice extends Model
         'status',
         'type',
         'paper_size',     // ← tambah
+        'is_birthday',    // ← data ulang tahun
+    ];
+
+    protected $casts = [
+        'is_birthday' => 'boolean',
     ];
 
     public function items()

@@ -39,8 +39,13 @@ const calcSubtotal = (items) =>
 
 
 const getItemImages = (item) => {
-  const src = item.image
-    ? (String(item.image).startsWith("http") ? toProxyUrl(item.image) : item.preview)
+  let image = item.image;
+  if (image && typeof image === "string") {
+    image = image.replace("/storage/invoice-images/", "/api/image/invoice-images/");
+    image = image.replace("/storage/avatars/", "/api/image/avatars/");
+  }
+  const src = image
+    ? (String(image).startsWith("http") ? toProxyUrl(image) : item.preview)
     : (item.preview && String(item.preview).startsWith("data:") ? item.preview : null);
   if (!src) return [];
   return Array.isArray(src) ? src : [src];
@@ -51,7 +56,8 @@ const toProxyUrl = (url) => {
   if (!url) return url;
   // Hanya strip di local/dev saja
   if (import.meta.env.DEV && !import.meta.env.VITE_API_URL) {
-    return url.replace("https://api.flowerplusofficial.com", "");
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    return url.replace(apiUrl, "");
   }
   return url;
 };
@@ -383,8 +389,15 @@ const hasAnyImage = allItems.some(
 
   useEffect(() => {
     if (id) {
-      fetch(`${API_URL}/api/invoices/${id}`)
-        .then((res) => res.json())
+      const token = localStorage.getItem("token");
+      const headers = { "Accept": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      fetch(`${API_URL}/api/invoices/${id}`, { headers })
+        .then((res) => {
+          if (!res.ok) throw new Error("Gagal mengambil data");
+          return res.json();
+        })
         .then((result) => {
           const inv = result.data || result;
           if (inv.items) {
@@ -415,8 +428,15 @@ useEffect(() => {
     if (date) params.set("date", date);
     if (hasAnyImage) params.set("has_image", "true");
 
-    fetch(`${API_URL}/api/invoices/preview-number?${params}`)
-      .then((res) => res.json())
+    const token = localStorage.getItem("token");
+    const headers = { "Accept": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    fetch(`${API_URL}/api/invoices/preview-number?${params}`, { headers })
+      .then((res) => {
+        if (!res.ok) throw new Error("Gagal");
+        return res.json();
+      })
       .then((d) => setGeneratedNumber(d.invoiceNumber))
       .catch((err) => console.error("Preview number error:", err));
   }
@@ -449,8 +469,15 @@ useEffect(() => {
   // ─── Actions ───────────────────────────────────────────────────────────────
 
   const openPairModal = () => {
-    fetch(`${API_URL}/api/invoices?paper_size=a5&per_page=200`)
-      .then((res) => res.json())
+    const token = localStorage.getItem("token");
+    const headers = { "Accept": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    fetch(`${API_URL}/api/invoices?paper_size=a5&per_page=200`, { headers })
+      .then((res) => {
+        if (!res.ok) throw new Error("Gagal");
+        return res.json();
+      })
       .then((result) => {
         const raw = result.data?.data || result.data || result || [];
         setA5List(raw.filter((inv) => inv.paper_size === "a5" && String(inv.id) !== String(invoiceData?.id)));
@@ -609,13 +636,23 @@ const handleSave = async () => {
       date:         invoiceData.date,
       status:       invoiceData.status,
       type:         invoiceType,
+      is_birthday:  Boolean(invoiceData.is_birthday),
       items:        sanitizedItems,
     };
 
     console.log("=== SENDING REQUEST ===");
+    const token = localStorage.getItem("token");
+    const headers = {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
     const response = await fetch(url, {
       method:  isEdit ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      headers: headers,
       body:    JSON.stringify(payload),
     });
     console.log("=== RESPONSE STATUS:", response.status, "===");
